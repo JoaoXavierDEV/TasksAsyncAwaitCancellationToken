@@ -37,6 +37,8 @@ public class Application : IApplication, IHostedService
 
         CancellationTest.TesteTaskAsync(token);
 
+        // TODO! Criar mais servicos IHosted de exemplo
+
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
