@@ -1,45 +1,39 @@
-﻿var cancellationTokenSource = new CancellationTokenSource();
+﻿using Exercicios.App;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using static Exercicios.DependencyInjection;
 
-cancellationTokenSource.Token.Register(() =>
+namespace Exercicios
 {
-    // action é executada no momento do .Cancel()
-    Console.WriteLine("Operação cancelada pelo usuário");
-});
-
-
-Console.WriteLine("Para cancelar pressione Enter/Return...");
-
-var task = Task.Run(() =>
-{
-    for (var i = 0; i < 10; i++)
+    public class Program
     {
-        if (cancellationTokenSource.Token.IsCancellationRequested)
+        public static async Task Main(string[] args)
         {
-            Console.WriteLine("Operação cancelada.");
-            return;
-        }
+            var builder = Host.CreateDefaultBuilder(args);
 
-        // Simula alguma operação demorada
-        Thread.Sleep(1100);
-        Console.WriteLine($"Iteração {i + 1}");
+            builder.ConfigureServices(ResolveDependencies).UseConsoleLifetime();
+
+            var app = builder.Build();
+
+            await app.RunAsync();
+        }
     }
 
-    Console.WriteLine("Operação concluída com êxito.");
-});
-
-Console.ReadLine();
-
-Console.WriteLine(cancellationTokenSource.Token.IsCancellationRequested);
-
-cancellationTokenSource = null;
-
-cancellationTokenSource = new CancellationTokenSource();
-
-cancellationTokenSource.Cancel();
-
-
-Console.WriteLine(cancellationTokenSource.Token.IsCancellationRequested);
-
-await task;
-
-Console.ReadLine();
+    public static class DependencyInjection
+    {
+        public static Action<HostBuilderContext, IServiceCollection> ResolveDependencies = (builder, services) =>
+        {
+            //services.AddScoped<IGerenciarHoversController, GerenciarHoversController>();
+            //services.AddScoped<ILogger, Logger>();
+            services.AddScoped<ICancellationManager, CancellationManager>();
+            ////services.AddSingleton<IApplication, Application>();
+            services.AddHostedService<Application>();
+            ////services.AddHostedService<ExecutarInstrucoesAsync>();
+            //services.Configure<HostOptions>(option =>
+            //{
+            //    //option.ShutdownTimeout = System.TimeSpan.FromSeconds(5);
+            //    // option.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+            //});
+        };
+    }
+}
