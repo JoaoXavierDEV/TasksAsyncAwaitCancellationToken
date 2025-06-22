@@ -28,6 +28,7 @@ namespace Exercicios
             services.AddScoped<ICancellationManager, CancellationManager>();
             ////services.AddSingleton<IApplication, Application>();
             services.AddHostedService<Application>();
+            services.AddHostedService<Relatorio>();
             ////services.AddHostedService<ExecutarInstrucoesAsync>();
             //services.Configure<HostOptions>(option =>
             //{

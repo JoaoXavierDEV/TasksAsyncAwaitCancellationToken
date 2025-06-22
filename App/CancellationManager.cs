@@ -5,6 +5,7 @@ namespace Exercicios.App;
 public interface ICancellationManager
 {
     CancellationToken RegisterToken(string nomeServico);
+    CancellationToken ObterToken(string nomeServico);
     void CancelarTodos();
     void CancelarServico(string nomeServico);
     IEnumerable<Servico> ObterServicosAtivos();
@@ -69,6 +70,11 @@ public class CancellationManager : ICancellationManager
         if (!servico.CancellationToken.IsCancellationRequested) return;
 
         Servicos.Remove(servico);
+    }
+
+    public CancellationToken ObterToken(string nomeServico)
+    {
+        return Servicos.FirstOrDefault(s => s.Nome == nomeServico)?.CancellationToken.Token ?? throw new ArgumentException($"Serviço {nomeServico} não encontrado.", nameof(nomeServico));
     }
 }
 
