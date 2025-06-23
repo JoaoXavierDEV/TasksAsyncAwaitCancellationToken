@@ -34,9 +34,9 @@ public class CancellationManager : ICancellationManager
 
     public void CancelarTodos()
     {
-        foreach (var cts in Servicos)
+        foreach (var x in Servicos)
         {
-            cts.CancellationToken.Cancel();
+            x.CancellationToken.Cancel();
         }
     }
 

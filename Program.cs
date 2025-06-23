@@ -1,4 +1,5 @@
 ﻿using Exercicios.App;
+using Exercicios.App.HostedService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using static Exercicios.DependencyInjection;
@@ -27,14 +28,17 @@ namespace Exercicios
             //services.AddScoped<ILogger, Logger>();
             services.AddScoped<ICancellationManager, CancellationManager>();
             ////services.AddSingleton<IApplication, Application>();
-            services.AddHostedService<Application>();
+            services.AddHostedService<EmailHosted>();
             services.AddHostedService<Relatorio>();
-            ////services.AddHostedService<ExecutarInstrucoesAsync>();
-            //services.Configure<HostOptions>(option =>
-            //{
-            //    //option.ShutdownTimeout = System.TimeSpan.FromSeconds(5);
-            //    // option.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
-            //});
+            services.AddHostedService<Application>();
+
+            services.Configure<HostOptions>(option =>
+            {
+                option.ShutdownTimeout = System.TimeSpan.FromSeconds(2);
+                option.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+                option.ServicesStopConcurrently = true;
+                option.ServicesStartConcurrently = true;
+            });
         };
     }
 }

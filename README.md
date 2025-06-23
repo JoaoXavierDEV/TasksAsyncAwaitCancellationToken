@@ -33,7 +33,8 @@ Exemplo de implementação de serviço agendado usando `BackgroundService` para exe
 ## Como Executar
 
 1. Configure o projeto para rodar em .NET 9.
-2. Execute os métodos de teste diretamente ou registre o serviço no `Program.cs`:3. Para testar o cancelamento, chame `cancellationTokenSource.Cancel()` durante a execução.
+2. Execute os métodos de teste diretamente ou registre o serviço no `Program.cs`:
+3. Para testar o cancelamento, chame `cancellationTokenSource.Cancel()` durante a execução.
 
 ---
 

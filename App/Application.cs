@@ -18,10 +18,10 @@ public class Application : IApplication, IHostedService
         ServiceProvider = serviceProvider;
 
 
-        var tokenRelatorio = Resolve<ICancellationManager>().RegisterToken("Serviço de Relatorio");
-        Relatorio.StartAsync(tokenRelatorio);
+        //var tokenRelatorio = Resolve<ICancellationManager>().RegisterToken("Serviço de Relatorio");
+        //Relatorio.StartAsync(tokenRelatorio);
 
-        Relatorio.StopAsync(tokenRelatorio);
+        //Relatorio.StopAsync(tokenRelatorio);
     }
 
     private T Resolve<T>() where T : class
@@ -47,8 +47,8 @@ public class Application : IApplication, IHostedService
 
 
         Task.WhenAll(
-            // EmailAniversarioService.EnviarEmail(tokenEmail),
-            EmailAniversarioService.EnviarEmailTask(tokenEmailTask)
+        // EmailAniversarioService.EnviarEmail(tokenEmail),
+        //   EmailAniversarioService.EnviarEmailTask(tokenEmailTask)
         //CancellationTest.TesteTaskAsync(token),
 
         ).ContinueWith(t =>
@@ -119,7 +119,7 @@ public class Application : IApplication, IHostedService
             else if (key == "host")
             {
                 Resolve<ICancellationManager>().CancelarServico("Serviço de Relatorio");
-
+                Resolve<IHost>().StopAsync(); // para toda a aplicação, todos os serviços async
 
             }
         }

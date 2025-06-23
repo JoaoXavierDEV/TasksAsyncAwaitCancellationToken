@@ -8,7 +8,8 @@ namespace Exercicios.App;
 public static class EmailAniversarioService
 {
     /// <summary>
-    /// Método responsável por enviar e-mails de aniversário.
+    /// Método responsável por enviar e-mails de aniversário diariamente às 9h da manhã.
+    /// Forma simples usando while
     /// </summary>
     /// <param name="cancellationTokenSource"></param>
     /// <returns></returns>
@@ -53,8 +54,8 @@ public static class EmailAniversarioService
     }
 
     /// <summary>
-    /// Método responsável por enviar e-mails de aniversário.
-    /// 
+    /// Método responsável por enviar e-mails de aniversário diariamente às 9h da manhã.
+    /// Usando TASK, forma recomenada: await Task.Run(async () => {} , cancellationTokenSource) 
     /// </summary>
     /// <param name="cancellationTokenSource"></param>
     /// <returns></returns>
