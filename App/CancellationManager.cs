@@ -4,91 +4,101 @@ namespace Exercicios.App;
 
 public interface ICancellationManager
 {
-    CancellationToken RegisterToken(string nomeServico);
-    CancellationToken ObterToken(string nomeServico);
+    CancellationToken RegisterToken(string nome);
+    CancellationToken ObterToken(string nome);
     void CancelarTodos();
-    void CancelarServico(string nomeServico);
-    IEnumerable<Servico> ObterServicosAtivos();
-    IEnumerable<Servico> ObterTodosOsServicos();
+    void CancelarToken(string nome);
+    IEnumerable<Token> ObterTokensAtivos();
+    IEnumerable<Token> ObterTodosOsTokens();
 }
 
 public class CancellationManager : ICancellationManager
 {
-    public List<Servico> Servicos { get; set; } = new List<Servico>();
+    private readonly IServiceProvider ServiceProvider;
+    public List<Token> Tokens { get; set; } = new List<Token>();
 
-    public CancellationToken RegisterToken(string nomeServico)
+    public CancellationManager(IServiceProvider serviceProvider)
+    {
+        ServiceProvider = serviceProvider;
+    }
+
+    public CancellationManager()
+    {
+    }
+
+    public CancellationToken RegisterToken(string nome)
     {
         var cts = new CancellationTokenSource();
 
         cts.Token.Register(() =>
         {
-            Debug.WriteLine($"Serviço {nomeServico} cancelado pelo usuário.");
+            Debug.WriteLine($"Token {nome} cancelado pelo usuário.");
         });
 
-        var service = new Servico(nomeServico, DateTime.Now, cts);
+        var service = new Token(nome, cts);
 
-        Servicos.Add(service);
+        Tokens.Add(service);
 
         return cts.Token;
     }
 
     public void CancelarTodos()
     {
-        foreach (var x in Servicos)
+        foreach (var x in Tokens)
         {
             x.CancellationToken.Cancel();
         }
     }
 
-    public IEnumerable<Servico> ObterServicosAtivos()
+    public IEnumerable<Token> ObterTokensAtivos()
     {
         // Retorna apenas os que ainda não foram cancelados
-        foreach (var cts in Servicos)
+        foreach (var cts in Tokens)
         {
             if (!cts.CancellationToken.IsCancellationRequested)
                 yield return cts;
         }
     }
 
-    public IEnumerable<Servico> ObterTodosOsServicos() => Servicos;
-
-    public void CancelarServico(string nomeServico)
+    public IEnumerable<Token> ObterTodosOsTokens()
     {
-        var servico = ObterTodosOsServicos().FirstOrDefault(s => s.Nome == nomeServico);
-        if (servico != null)
+        //var Servicos = ServiceProvider;
+
+        return Tokens;
+    }
+    // se houver um token com o mesmo nome eparametros, nao executar
+    // se houver 
+    public void CancelarToken(string nome)
+    {
+        var Token = ObterTodosOsTokens().FirstOrDefault(s => s.Nome == nome);
+        if (Token != null)
         {
-            servico.CancellationToken.Cancel();
-            RemoverServico(servico);
+            Token.CancellationToken.Cancel();
+            RemoverToken(Token);
         }
 
     }
 
-    private void RemoverServico(Servico servico)
+    private void RemoverToken(Token Token)
     {
-        if (servico == null) return;
-        if (!Servicos.Contains(servico)) return;
-        if (!servico.CancellationToken.IsCancellationRequested) return;
+        if (Token is null) return;
+        if (!Tokens.Contains(Token)) return;
+        if (!Token.CancellationToken.IsCancellationRequested) return;
 
-        Servicos.Remove(servico);
+        Tokens.Remove(Token);
     }
 
-    public CancellationToken ObterToken(string nomeServico)
+    public CancellationToken ObterToken(string nome)
     {
-        return Servicos.FirstOrDefault(s => s.Nome == nomeServico)?.CancellationToken.Token ?? throw new ArgumentException($"Serviço {nomeServico} não encontrado.", nameof(nomeServico));
+        return Tokens.FirstOrDefault(s => s.Nome == nome)?.CancellationToken.Token ?? throw new ArgumentException($"Serviço {nome} não encontrado.", nameof(nome));
     }
 }
 
 
-public class Servico
+public class Token(string nome, CancellationTokenSource cancellationToken)
 {
-    public Servico(string nome, DateTime start, CancellationTokenSource cancellationToken)
-    {
-        Nome = nome;
-        Start = start;
-        CancellationToken = cancellationToken;
-    }
-
-    public string Nome { get; set; } = string.Empty;
+    public string Nome { get; set; } = nome;
     public DateTime Start { get; set; } = DateTime.Now;
-    public CancellationTokenSource CancellationToken { get; set; }
+    public CancellationTokenSource CancellationToken { get; set; } = cancellationToken;
+    public override string ToString() => $"{Nome} - {Start} - {CancellationToken.IsCancellationRequested}";
 }

@@ -1,10 +1,17 @@
 ﻿using Microsoft.Extensions.Hosting;
-using static Exercicios.App.Application;
+using Microsoft.Extensions.Logging;
 
 namespace Exercicios.App.HostedService
 {
     public class EmailHosted : IHostedService
     {
+        private readonly ILogger<EmailHosted> _logger;
+
+        public EmailHosted(ILogger<EmailHosted> logger)
+        {
+            _logger = logger;
+        }
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             // Vincula o token de cancelamento atual ao novo token
@@ -13,37 +20,62 @@ namespace Exercicios.App.HostedService
             // Atualiza o token de cancelamento para o novo token vinculado
             cancellationToken = newToken.Token;
 
-            LogarDebug(typeof(EmailHosted), "EmailHosted iniciado");
+            _logger.LogDebug("EmailHosted iniciado");
 
             await Task.Run(async () =>
             {
                 try
                 {
                     // Inicia o serviço de envio de e-mails de aniversário
-                    //await EmailAniversarioService.EnviarEmail(cancellationToken);
+                    //await EmailAniversarioService.EnviarEmailTask(cancellationToken);
 
-                    for (var i = 0; i < 100; i++)
+                    await Task.Run(async () =>
                     {
-                        // Delay de 5 segundos para cada incremento
-                        // para simular uma operação longa
+                        _logger.LogDebug("Iniciando o serviço de envio de e-mails de aniversário...");
 
-                        // os HostedService são executados em fila?
-                        if (DateTime.Now.Second % 2 == 0)
+                        // Calcula o tempo até as 9h da manhã do próximo dia (ou hoje, se ainda não passou)
+                        var agora = DateTime.Now;
+                        var proximaExecucao = new DateTime(agora.Year, agora.Month, agora.Day, 9, 0, 0);
+
+                        if (agora > proximaExecucao)
+                            proximaExecucao = proximaExecucao.AddDays(1);
+
+                        var delay = proximaExecucao - agora;
+
+
+
+                        _logger.LogDebug("Próxima execução agendada para: {proximaExecucao} (em {delay.TotalMinutes} minutos)", proximaExecucao, delay.TotalMinutes);
+                        try
                         {
-                            throw new TimeoutException("erooorroorororor");
+                            // Aguarda até a próxima execução
+                            await Task.Delay(delay, cancellationToken);
+
+                            // Sua lógica diária aqui
+                            _logger.LogDebug("Email de Aniversário enviado para os clientes em: {0}", DateTime.Now.ToString());
+
+                            // Aguarda 24 horas para a próxima execução
+                            await Task.Delay(TimeSpan.FromHours(24), cancellationToken);
+                        }
+                        catch (TaskCanceledException ex)
+                        {
+                            _logger.LogDebug("Serviço de email cancelado pelo usuário. !! " + ex.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug($"Erro no serviço: {ex.Message}");
                         }
 
-                        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-                        LogarDebug(typeof(Relatorio), $"Simula uma query longa {i + 1}");
-                    }
+
+                    }, cancellationToken);
                 }
                 catch (TaskCanceledException ex)
                 {
-                    LogarDebug(typeof(EmailHosted), "Serviço de email cancelado pelo usuário. !! " + ex.Message);
+                    _logger.LogDebug("Serviço de email cancelado pelo usuário. !! " + ex.Message);
+
                 }
                 catch (Exception ex)
                 {
-                    LogarDebug(typeof(EmailHosted), $"Erro no serviço de email: {ex.Message}");
+                    _logger.LogDebug($"Erro no serviço de email: {ex.Message}");
                 }
             }, cancellationToken);
 
@@ -65,9 +97,9 @@ namespace Exercicios.App.HostedService
             Aí sim, o host irá chamar o método StopAsync do seu serviço.
             */
 
-            LogarDebug(typeof(EmailHosted), "Operação cancelada pelo usuário. StopAsync");
+            //LogarDebug(typeof(EmailHosted), "Operação cancelada pelo usuário. StopAsync");
 
-            //Console.WriteLine("Serviço de Relatório parado. StopAsync");
+            _logger.LogDebug("EmailHosted finalizado");
 
             return Task.CompletedTask;
         }

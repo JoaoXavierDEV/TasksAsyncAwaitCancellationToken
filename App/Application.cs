@@ -1,7 +1,8 @@
-﻿using System.Diagnostics;
+﻿using Exercicios.App.Command;
 using Exercicios.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Exercicios.App;
 
@@ -9,19 +10,18 @@ public class Application : IApplication, IHostedService
 {
     #region Construtor
 
+    private readonly ILogger<Application> _logger;
     private readonly IServiceProvider ServiceProvider;
+    private readonly IEnumerable<IMenuCommandBase> _commands;
 
-    public Relatorio Relatorio { get; set; } = new Relatorio();
-
-    public Application(IServiceProvider serviceProvider)
+    public Application(
+        IServiceProvider serviceProvider,
+        ILogger<Application> logger,
+        IEnumerable<IMenuCommandBase> commands)
     {
         ServiceProvider = serviceProvider;
-
-
-        //var tokenRelatorio = Resolve<ICancellationManager>().RegisterToken("Serviço de Relatorio");
-        //Relatorio.StartAsync(tokenRelatorio);
-
-        //Relatorio.StopAsync(tokenRelatorio);
+        _logger = logger;
+        _commands = commands;
     }
 
     private T Resolve<T>() where T : class
@@ -34,36 +34,32 @@ public class Application : IApplication, IHostedService
 
     public void Run()
     {
-        LogarDebug(this.GetType(), string.Format("RUN"));
+        _logger.LogInformation($" - App Run.");
 
-        //var tokenEmail = Resolve<ICancellationManager>().RegisterToken("Serviço de email");
+        var tokenEmail = Resolve<ICancellationManager>().RegisterToken("Serviço de email");
 
-        //var token = Resolve<ICancellationManager>().RegisterToken("Serviço de Testes");
+        var token = Resolve<ICancellationManager>().RegisterToken("Serviço de Testes");
 
         var tokenEmailTask = Resolve<ICancellationManager>().RegisterToken("Serviço de email Task");
 
-
-
-
-
         Task.WhenAll(
-        // EmailAniversarioService.EnviarEmail(tokenEmail),
-        //   EmailAniversarioService.EnviarEmailTask(tokenEmailTask)
-        //CancellationTest.TesteTaskAsync(token),
+        //  new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmail(tokenEmail),
+        //new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmailTask(tokenEmailTask),
+        //new CancellationTest(Resolve<ILogger<CancellationTest>>()).TesteTaskAsync(token),
+
+
 
         ).ContinueWith(t =>
         {
             if (t.IsFaulted)
             {
-                LogarDebug(this.GetType(), $"Erro ao executar tarefas: {t.Exception?.Message}");
+                _logger.LogError(t.Exception, "Erro ao executar tarefas assíncronas.");
             }
             else
             {
-                LogarDebug(this.GetType(), "Todas as tarefas concluídas com sucesso.");
+                _logger.LogInformation("Todas as tarefas concluídas com sucesso.");
             }
         });
-
-        // TODO! Criar mais servicos IHosted de exemplo
 
     }
 
@@ -78,106 +74,51 @@ public class Application : IApplication, IHostedService
     /// <returns>A completed <see cref="Task"/> when the operation finishes or is canceled.</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        LogarDebug(this.GetType(), " StartAsync");
+        _logger.BeginScope("Iniciando Application services.");
 
         Run();
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            Console.WriteLine("Pressione Enter para cancelar todos os serviços...");
-            var key = Console.ReadLine();
+            Console.WriteLine();
+            _commands.First(x => x.Nome == "Listar comandos").Execute();
+            Console.WriteLine();
+            Console.WriteLine("Digite um comando: ");
 
-            // TODO! Criar menu para criar serviços
+            string key = Console.ReadLine() ?? string.Empty;
 
-            if (key == "cancelar all")
-            {
-                Resolve<ICancellationManager>().CancelarTodos();
-            }
-            else if (key == "all")
-            {
-                Resolve<ICancellationManager>().ObterTodosOsServicos().ToList().ForEach(s =>
-                {
-                    LogarDebug(this.GetType(), $"Serviço: {s.Nome} iniciado em {s.Start}", Log.Console);
-                });
-            }
-            else if (key == "cancelar email")
-            {
-                Resolve<ICancellationManager>().CancelarServico("Serviço de email");
-            }
-            else if (key == "cancelar servico")
-            {
-                var service = Console.ReadLine();
-                Resolve<ICancellationManager>().CancelarServico(service);
-            }
-            else if (key == "ativos")
-            {
-                Resolve<ICancellationManager>().ObterServicosAtivos().ToList().ForEach(s =>
-                {
-                    LogarDebug(this.GetType(), $"Serviço: {s.Nome} iniciado em {s.Start}", Log.Console);
-                });
-            }
-            else if (key == "host")
-            {
-                Resolve<ICancellationManager>().CancelarServico("Serviço de Relatorio");
-                Resolve<IHost>().StopAsync(); // para toda a aplicação, todos os serviços async
+            var command = _commands.FirstOrDefault(c => c.CanExecute(key));
 
+            if (command != null)
+            {
+                Console.WriteLine();
+                Console.WriteLine("===========================================================================");
+                command.Execute();
+                Console.WriteLine("===========================================================================");
+            }
+            else
+            {
+                Console.WriteLine("Comando não reconhecido.");
             }
         }
 
-        LogarDebug(this.GetType(), $" em modo assíncrono. {DateTime.Now}");
-
-        LogarDebug(this.GetType(), "Finalizado");
+        _logger.LogInformation($" - Modo assíncrono. {DateTime.Now}");
+        _logger.LogInformation("Finalizado");
 
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine(string.Format("stopAsync {0}", typeof(Program)));
+        _logger.LogInformation("Stopping Application services.");
 
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        Console.WriteLine(string.Format("stopAsync {0}", typeof(Program)));
-        throw new NotImplementedException();
+        _logger.LogInformation("Disposing Application resources.");
     }
 
-    public static void LogarDebug(Type type, string mensagem, Log log = Log.Debug)
-    {
-        var msg = string.Format("{0} ---------- {1}", type.Name, mensagem);
 
-        switch (log)
-        {
-            case Log.All:
-                {
-                    Console.WriteLine(msg);
-                    Debug.WriteLine(msg);
-                    break;
-                }
-            case Log.Debug:
-                {
-                    Debug.WriteLine(msg);
-                    break;
-                }
-            case Log.Console:
-                Console.WriteLine(msg);
-                break;
-
-            default:
-                {
-                    Debug.WriteLine(msg);
-                    break;
-
-                }
-        }
-    }
-
-    public enum Log
-    {
-        All,
-        Debug,
-        Console,
-    }
 }

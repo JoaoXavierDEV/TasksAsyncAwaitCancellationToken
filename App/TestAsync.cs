@@ -1,10 +1,18 @@
-﻿using static Exercicios.App.Application;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Exercicios.App;
 
-public static class CancellationTest
+public class CancellationTest
 {
-    public async static Task TesteTask(CancellationToken cancellationTokenSource)
+    private readonly ILogger<CancellationTest> _logger;
+
+    public CancellationTest(ILogger<CancellationTest> logger)
+    {
+        _logger = logger;
+    }
+
+
+    public async Task TesteTask(CancellationToken cancellationTokenSource)
     {
 
         var task = Task.Run(() =>
@@ -14,23 +22,24 @@ public static class CancellationTest
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     Console.WriteLine("Operação cancelada.");
-                    LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
+                    //LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
                     return;
                 }
 
                 // Simula alguma operação demorada
                 Thread.Sleep(1100);
-                LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
+
+                //LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
             }
 
-            LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
+            //LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
 
         }, cancellationToken: cancellationTokenSource);
 
         await task;
     }
 
-    public async static Task TesteTaskAsync(CancellationToken cancellationTokenSource)
+    public async Task TesteTaskAsync(CancellationToken cancellationTokenSource)
     {
         // lançou exceção
         for (var i = 0; i < 1000; i++)
@@ -40,27 +49,32 @@ public static class CancellationTest
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     Console.WriteLine("Operação cancelada.");
-                    LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
+                    //LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
                     return;
                 }
                 // Simula alguma operação demorada
                 await Task.Delay(1100, cancellationTokenSource);
-                LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
+                _logger.LogDebug($"Iteração {i + 1}");
+                _logger.LogDebug($"Thread atual: {Thread.CurrentThread.ManagedThreadId}");
+                _logger.LogDebug($"Task ID: {Task.CurrentId}");
+                //_logger.LogInformation($"Task Status: {TaskStatus.Running}");
+
+                //LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
             }
             catch (TaskCanceledException ex)
             {
                 // Cancelamento solicitado, apenas sair do loop
-                LogarDebug(typeof(CancellationTest), "Serviço cancelado pelo usuário. !! " + ex.Message);
+                //LogarDebug(typeof(CancellationTest), "Serviço cancelado pelo usuário. !! " + ex.Message);
                 break;
             }
             catch (Exception ex)
             {
 
-                LogarDebug(typeof(CancellationTest), $"{ex.Message}");
+                //LogarDebug(typeof(CancellationTest), $"{ex.Message}");
                 //throw;
             }
         }
-        LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
+        //LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
 
     }
 
@@ -72,14 +86,14 @@ public static class CancellationTest
             if (cancellationTokenSource.IsCancellationRequested)
             {
                 Console.WriteLine("Operação cancelada.");
-                LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
+                //LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
                 return;
             }
             // Simula alguma operação demorada
             Thread.Sleep(1100);
-            LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
+            //LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
         }
-        LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
+        //LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
     }
 
     public static void TesteTaskVoid(CancellationToken cancellationTokenSource)
@@ -92,16 +106,16 @@ public static class CancellationTest
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     Console.WriteLine("Operação cancelada.");
-                    LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
+                    //LogarDebug(typeof(CancellationTest), "Operação cancelada pelo usuário.");
                     return;
                 }
 
                 // Simula alguma operação demorada
                 Thread.Sleep(1100);
-                LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
+                //LogarDebug(typeof(CancellationTest), $"Iteração {i + 1}");
             }
 
-            LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
+            //LogarDebug(typeof(CancellationTest), "Operação concluída com êxito.");
 
         }, cancellationToken: cancellationTokenSource);
 

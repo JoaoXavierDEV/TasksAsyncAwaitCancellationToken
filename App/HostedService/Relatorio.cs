@@ -1,10 +1,17 @@
 ﻿using Microsoft.Extensions.Hosting;
-using static Exercicios.App.Application;
+using Microsoft.Extensions.Logging;
 
 namespace Exercicios.App
 {
     public class Relatorio : IHostedService
     {
+        private readonly ILogger<Relatorio> _logger;
+
+        public Relatorio(ILogger<Relatorio> logger)
+        {
+            _logger = logger;
+        }
+
         /// <summary>
         /// Serviço asíncrono que simula a geração de um relatório longo.
         /// Caso o usuário cancele a operação, o serviço irá parar de executar.
@@ -20,23 +27,23 @@ namespace Exercicios.App
             // Atualiza o token de cancelamento para o novo token vinculado
             cancellationToken = newToken.Token;
 
-            LogarDebug(typeof(Relatorio), "Relatório iniciado");
+            _logger.LogDebug("Relatório iniciado");
 
             // Tarefa principal do serviço
             var tarefaPrincipal = ExecutarRelatorioAsync(cancellationToken);
 
             // Tarefa de timeout (2 minutos)
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(600), cancellationToken);
 
             // Aguarda a primeira que terminar
             var completedTask = await Task.WhenAny(tarefaPrincipal, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                LogarDebug(typeof(Relatorio), "TimeOutException");
+                _logger.LogError("Query excedeu o tempo limite por isso foi cancelada automaticamente");
                 newToken.Cancel();
 
-                //throw new TimeoutException("Query excedeu o tempo limite por isso foi cancelada automaticamente");
+                //throw new TimeoutException("");
                 return;
             }
 
@@ -57,15 +64,15 @@ namespace Exercicios.App
 
                         // os HostedService são executados em fila?
 
-                        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-                        LogarDebug(typeof(Relatorio), $"Simula uma query longa {i + 1}");
+                        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                        _logger.LogDebug($"Simula uma query longa {i + 1}");
                     }
 
-                    LogarDebug(typeof(Relatorio), "Operação concluída com êxito.");
+                    _logger.LogDebug("Operação concluída com êxito.");
                 }
                 catch (TaskCanceledException ex)
                 {
-                    LogarDebug(typeof(Relatorio), ex.Message);
+                    _logger.LogDebug(ex.Message);
                 }
             }, cancellationToken);
 
@@ -83,7 +90,7 @@ namespace Exercicios.App
             Aí sim, o host irá chamar o método StopAsync do seu serviço.
             */
 
-            LogarDebug(typeof(Relatorio), "Operação cancelada pelo usuário. StopAsync");
+            _logger.LogDebug("Operação cancelada pelo usuário. StopAsync");
 
             //Console.WriteLine("Serviço de Relatório parado. StopAsync");
 

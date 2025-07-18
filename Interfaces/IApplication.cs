@@ -8,6 +8,7 @@ namespace Exercicios.Interfaces
 {
     public interface IApplication
     {
+        void Dispose();
         public void Run();
     }
 }
