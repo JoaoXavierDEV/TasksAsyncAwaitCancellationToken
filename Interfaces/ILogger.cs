@@ -8,6 +8,7 @@ public class FileLogger : ILogger
 {
     private readonly string _categoryName;
     private readonly string _filePath;
+    private static readonly object _fileLock = new();
 
     public FileLogger(string categoryName, string filePath)
     {
@@ -29,12 +30,15 @@ public class FileLogger : ILogger
         if (!IsEnabled(logLevel))
             return;
 
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        var timestamp = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
         var message = formatter(state, exception);
 
-        var log = $"{timestamp} [{logLevel}] {_categoryName}: {message}";
+        var log = $"{_categoryName}: {message}";
 
-        File.AppendAllText(_filePath, log + Environment.NewLine);
+        lock (_fileLock)
+        {
+            File.AppendAllText(_filePath, log + Environment.NewLine);
+        }
         Debug.WriteLine(log);
     }
 }
@@ -54,15 +58,29 @@ public class FileLoggerProvider : ILoggerProvider
         if (categoryName.StartsWith("Microsoft") || categoryName.StartsWith("System"))
             return NullLogger.Instance; // logger que ignora tudo
 
-        var lastName = categoryName.Split('.').Last();
-
-        var fileLog = $"{categoryName}_log.txt";
+        var fileLog = $"All_log.txt";
 
         var newFilePath = string.Format("{0}{1}", _filePath, fileLog);
 
         if (File.Exists(newFilePath)) File.Delete(newFilePath);
 
         return new FileLogger(categoryName, newFilePath);
+
+        #region TXT para cada log
+        // Ignora logs da Microsoft
+        //if (categoryName.StartsWith("Microsoft") || categoryName.StartsWith("System"))
+        //    return NullLogger.Instance; // logger que ignora tudo
+
+        //var lastName = categoryName.Split('.').Last();
+
+        //var fileLog = $"{categoryName}_log.txt";
+
+        //var newFilePath = string.Format("{0}{1}", _filePath, fileLog);
+
+        //if (File.Exists(newFilePath)) File.Delete(newFilePath);
+
+        //return new FileLogger(categoryName, newFilePath); 
+        #endregion
     }
 
     public void Dispose() { }

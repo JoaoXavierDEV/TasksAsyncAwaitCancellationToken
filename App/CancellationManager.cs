@@ -4,10 +4,11 @@ namespace Exercicios.App;
 
 public interface ICancellationManager
 {
-    CancellationToken RegisterToken(string nome);
-    CancellationToken ObterToken(string nome);
+    Token RegisterToken(string nome);
+    Token ObterToken(string nome);
     void CancelarTodos();
     void CancelarToken(string nome);
+    void CancelarToken(Token token);
     IEnumerable<Token> ObterTokensAtivos();
     IEnumerable<Token> ObterTodosOsTokens();
 }
@@ -15,18 +16,15 @@ public interface ICancellationManager
 public class CancellationManager : ICancellationManager
 {
     private readonly IServiceProvider ServiceProvider;
-    public List<Token> Tokens { get; set; } = new List<Token>();
+    private readonly List<Token> Tokens = new List<Token>();
 
     public CancellationManager(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
     }
 
-    public CancellationManager()
-    {
-    }
 
-    public CancellationToken RegisterToken(string nome)
+    public Token RegisterToken(string nome)
     {
         var cts = new CancellationTokenSource();
 
@@ -35,12 +33,13 @@ public class CancellationManager : ICancellationManager
             Debug.WriteLine($"Token {nome} cancelado pelo usuário.");
         });
 
-        var service = new Token(nome, cts);
+        var tk = new Token(nome, cts);
 
-        Tokens.Add(service);
+        Tokens.Add(tk);
 
-        return cts.Token;
+        return tk;
     }
+
 
     public void CancelarTodos()
     {
@@ -62,21 +61,30 @@ public class CancellationManager : ICancellationManager
 
     public IEnumerable<Token> ObterTodosOsTokens()
     {
-        //var Servicos = ServiceProvider;
-
         return Tokens;
     }
-    // se houver um token com o mesmo nome eparametros, nao executar
-    // se houver 
+
     public void CancelarToken(string nome)
     {
-        var Token = ObterTodosOsTokens().FirstOrDefault(s => s.Nome == nome);
-        if (Token != null)
+        var Token = ObterTodosOsTokens().FirstOrDefault(s => string.Equals(s.Nome, nome, StringComparison.InvariantCultureIgnoreCase));
+
+        if (Token is null)
         {
-            Token.CancellationToken.Cancel();
-            RemoverToken(Token);
+            Console.WriteLine($"Token {nome} não encontrado.", nameof(nome));
+            return;
         }
 
+        CancelarToken(Token);
+    }
+
+    public void CancelarToken(Token token)
+    {
+        if (token is null)
+            throw new ArgumentNullException(nameof(token), "Token não pode ser nulo.");
+
+        token.CancellationToken.Cancel();
+
+        //RemoverToken(token);
     }
 
     private void RemoverToken(Token Token)
@@ -88,17 +96,30 @@ public class CancellationManager : ICancellationManager
         Tokens.Remove(Token);
     }
 
-    public CancellationToken ObterToken(string nome)
+    public Token ObterToken(string nome)
     {
-        return Tokens.FirstOrDefault(s => s.Nome == nome)?.CancellationToken.Token ?? throw new ArgumentException($"Serviço {nome} não encontrado.", nameof(nome));
+        return Tokens.FirstOrDefault(s => s.Nome == nome)
+                ?? throw new ArgumentException($"Token {nome} não encontrado.", nameof(nome));
     }
 }
 
 
-public class Token(string nome, CancellationTokenSource cancellationToken)
+public class Token
 {
-    public string Nome { get; set; } = nome;
+    public string Nome { get; set; }
     public DateTime Start { get; set; } = DateTime.Now;
-    public CancellationTokenSource CancellationToken { get; set; } = cancellationToken;
+    public CancellationTokenSource CancellationToken { get; set; }
+    public IViewModel ViewModel { get; set; }
+    public Task Instancia { get; set; }
+
+    public Token(string nome, CancellationTokenSource cancellationToken)
+    {
+        Nome = nome;
+        CancellationToken = cancellationToken;
+    }
+
     public override string ToString() => $"{Nome} - {Start} - {CancellationToken.IsCancellationRequested}";
+
 }
+
+public interface IViewModel { }

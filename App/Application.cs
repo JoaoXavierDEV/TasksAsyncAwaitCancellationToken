@@ -13,15 +13,18 @@ public class Application : IApplication, IHostedService
     private readonly ILogger<Application> _logger;
     private readonly IServiceProvider ServiceProvider;
     private readonly IEnumerable<IMenuCommandBase> _commands;
+    private readonly IEnumerable<ILoggerProvider> _loggingBuilders;
 
     public Application(
         IServiceProvider serviceProvider,
         ILogger<Application> logger,
-        IEnumerable<IMenuCommandBase> commands)
+        IEnumerable<IMenuCommandBase> commands,
+        IEnumerable<ILoggerProvider> loggingBuilders)
     {
         ServiceProvider = serviceProvider;
         _logger = logger;
         _commands = commands;
+        _loggingBuilders = loggingBuilders;
     }
 
     private T Resolve<T>() where T : class
@@ -37,28 +40,38 @@ public class Application : IApplication, IHostedService
         _logger.LogInformation($" - App Run.");
 
         var tokenEmail = Resolve<ICancellationManager>().RegisterToken("Serviço de email");
+        tokenEmail.Instancia = new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmail(tokenEmail.CancellationToken.Token);
 
-        var token = Resolve<ICancellationManager>().RegisterToken("Serviço de Testes");
+        var tokenEmailtask = Resolve<ICancellationManager>().RegisterToken("Serviço de email task");
+        tokenEmailtask.Instancia = new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmailTask(tokenEmailtask.CancellationToken.Token);
 
-        var tokenEmailTask = Resolve<ICancellationManager>().RegisterToken("Serviço de email Task");
+
+        //var token = Resolve<ICancellationManager>().RegisterToken("Serviço de Relatorio");
+
+        //var tokenEmailTask = Resolve<ICancellationManager>().RegisterToken("Serviço de email Task");
+
+
+        // TODO adicionar dto de parametros de consulta, info de entrada da viewModel
 
         Task.WhenAll(
-        //  new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmail(tokenEmail),
+
         //new EmailAniversarioService(Resolve<ILogger<EmailAniversarioService>>()).EnviarEmailTask(tokenEmailTask),
         //new CancellationTest(Resolve<ILogger<CancellationTest>>()).TesteTaskAsync(token),
+
+        //token.Instancia = new Relatorio(Resolve<ILogger<Relatorio>>()).StartAsync(token.CancellationToken.Token)
 
 
 
         ).ContinueWith(t =>
         {
-            if (t.IsFaulted)
-            {
-                _logger.LogError(t.Exception, "Erro ao executar tarefas assíncronas.");
-            }
-            else
-            {
-                _logger.LogInformation("Todas as tarefas concluídas com sucesso.");
-            }
+            //if (t.IsFaulted)
+            //{
+            //    _logger.LogError(t.Exception, "Erro ao executar tarefas assíncronas.");
+            //}
+            //else
+            //{
+            //    _logger.LogInformation("Todas as tarefas concluídas com sucesso.");
+            //}
         });
 
     }

@@ -53,7 +53,6 @@ public class EmailAniversarioService
             {
                 // Cancelamento solicitado, apenas sair do loop
                 _logger.LogDebug($"Serviço cancelado pelo usuário. !! {ex.Message}");
-                break;
             }
             catch (Exception ex)
             {
@@ -86,7 +85,7 @@ public class EmailAniversarioService
 
             TimeSpan delay = proximaExecucao - agora;
 
-            _logger.LogDebug("Próxima execução agendada para: {proximaExecucao} (em {delay.TotalMinutes} minutos)", proximaExecucao, delay);
+            _logger.LogDebug("TASK Próxima execução agendada para: {proximaExecucao} (em {delay.TotalMinutes} minutos)", proximaExecucao, delay);
             try
             {
                 // Aguarda até a próxima execução
